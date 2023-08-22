@@ -1,6 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.Numerics;
 using System.Reflection.PortableExecutable;
+using System.IO;
 
 namespace TextGame
 {
@@ -14,7 +15,7 @@ namespace TextGame
         public int Hp { get; set; }
         public int Gold { get; set; }
 
-        public Character(string name, string job, int level, int atk, int def, int hp, int gold)
+        public Character(string name, string job, int level, float atk, int def, int hp, int gold)
         {
             Name = name;
             Job = job;
@@ -45,15 +46,33 @@ namespace TextGame
             Name = name;
         }
 
-        public virtual void DisplayEquipment(bool shop, bool isSell)
+        public virtual void DisplayArmorProtect() { }
+
+        public void DisplayEquipment(bool shop, bool isSell)
         {
+            string Equip = (Isequip) ? "[E]" : "[X]";
+            Equip = shop ? "" : Equip;
+            int NameLengthRemain = (15 - Name.Length) / 2;
+            int DescriptionRemain = (30 - Description.ToString().Length) / 2;
+            string Money = (Ishave && !isSell) ? "구매완료" : SellGold.ToString() + " G";
+            setLayout(15 - Name.Length, NameLengthRemain, Equip + Name, false);
+            Console.Write("|");
+            DisplayArmorProtect();
+            Console.Write("|");
+            setLayout(30 - Description.ToString().Length, DescriptionRemain, Description, false);
+            if (shop)
+            {
+                Console.Write("|  ");
+                Console.Write(Money);
+            }
+            Console.WriteLine();
         }
 
         public virtual int GetNumber()
         {
             return 0;
         }
-        public void setLayout(int length, int remain, string str)
+        public void setLayout(int length, int remain, string str, bool isInt)
         {
             for (int i = 0; i < length; i++)
             {
@@ -63,7 +82,10 @@ namespace TextGame
                 }
                 else
                 {
-                    Console.Write(" ");
+                    if(isInt)
+                        Console.Write(" ");
+                    else
+                        Console.Write("  ");
                 }
             }
         }
@@ -77,27 +99,10 @@ namespace TextGame
             Attack = attack;
         }
         
-        public override void DisplayEquipment(bool shop, bool isSell)
+        public override void DisplayArmorProtect()
         {
-            string Equip = (Isequip) ? "[E]" : "[X]";
-            Equip = shop ? "" : Equip;
-            int NameLengthRemain = (10 - Name.Length) / 2;
-            int AttackLengthRemain = (4 - Attack.ToString().Length) / 2;
-            int DescriptionRemain = (30 - Description.ToString().Length) / 2;
-            string Money = (Ishave && !isSell) ? "구매완료" : SellGold.ToString() + " G";
-            int MoneyRemain = (8 - Money.Length) / 2;
-
-            setLayout(10 - Name.Length, NameLengthRemain, Equip + Name);
-            Console.Write("|");
-            setLayout(4 - Attack.ToString().Length, AttackLengthRemain, $"공격력 : +{Attack}");
-            Console.Write("|");
-            setLayout(30 - Description.ToString().Length, DescriptionRemain, Description);
-            if (shop)
-            {
-                Console.Write("|");
-                setLayout(8 - Money.Length, MoneyRemain, Money);
-            }
-            Console.WriteLine();
+            int AttackLengthRemain = (6 - Attack.ToString().Length) / 2;
+            setLayout(6 - Attack.ToString().Length, AttackLengthRemain, $"공격력 : +{Attack}", true);
         }
 
         public override int GetNumber()
@@ -114,27 +119,10 @@ namespace TextGame
             Protect = protect;
         }
 
-        public override void DisplayEquipment(bool shop, bool isSell)
+        public override void DisplayArmorProtect()
         {
-            string Equip = (Isequip) ? "[E]" : "[X]";
-            Equip = shop ? "" : Equip;
-            int NameLengthRemain = (10 - Name.Length) / 2;
-            int ProtectLengthRemain = (4 - Protect.ToString().Length) / 2;
-            int DescriptionRemain = (30 - Description.ToString().Length) / 2;
-            string Money = (Ishave && !isSell) ? "구매완료" : SellGold.ToString() + " G";
-            int MoneyRemain = (8 - Money.Length) / 2;
-
-            setLayout(10 - Name.Length, NameLengthRemain, Equip + Name);
-            Console.Write("|");
-            setLayout(4 - Protect.ToString().Length, ProtectLengthRemain, $"방어력 : +{Protect}");
-            Console.Write("|");
-            setLayout(30 - Description.ToString().Length, DescriptionRemain, Description);
-            if (shop)
-            {
-                Console.Write("|");
-                setLayout(8 - SellGold.ToString().Length, MoneyRemain, Money);
-            }
-            Console.WriteLine();
+            int ProtectLengthRemain = (6 - Protect.ToString().Length) / 2;
+            setLayout(6 - Protect.ToString().Length, ProtectLengthRemain, $"방어력 : +{Protect}", true);
         }
 
         public override int GetNumber()
@@ -145,17 +133,19 @@ namespace TextGame
 
     internal class Program
     {
+
+        private static List<string> data = new List<string>();
         private static Character player;
         private static List<Equipment> equipments = new List<Equipment>();
         static void EquipmentDataSetting()
         {
-            Armor ironArmor = new Armor(500, 1, true, true, "무쇠로 만들어져 튼튼한 갑옷입니다.", "무쇠갑옷", 5);
-            Armor noviceArmor = new Armor(2000, 1, false, false, "수련에 도움을 주는 갑옷입니다.", "수련자 갑옷", 9);
-            Armor spartanArmor = new Armor(3500, 1, false, false, "스파르타의 전사들이 사용했다는 전설의 갑옷입니다.", "스파르타의 갑옷", 15);
+            Armor ironArmor = new Armor(500, 1, false, false, " 무쇠로 만들어져 튼튼한 갑옷입니다. ", "무쇠 갑옷", 5);
+            Armor noviceArmor = new Armor(2000, 1, false, false, " 수련에 도움을 주는 갑옷입니다. ", "수련자 갑옷", 9);
+            Armor spartanArmor = new Armor(3500, 1, false, false, "스파르타의 전사들이 사용했다는 전설의 갑옷입니다. ", "스파르타의 갑옷", 15);
 
-            Weapon oldSword = new Weapon(600, 0, false, true, "쉽게 볼 수 있는 낡은 검입니다.", "낡은 검", 2);
-            Weapon bronzeAx = new Weapon(500, 0, false, false, "어디선가 사용됐던거 같은 도끼입니다.", "청동 도끼", 5);
-            Weapon spearOfSparta = new Weapon(500, 0, false, false, "스파르타의 전사들이 사용했다는 전설의 창입니다.", "스파르타의 창", 7);
+            Weapon oldSword = new Weapon(600, 0, false, false, "쉽게 볼 수 있는 낡은 검입니다.", "낡은 검", 2);
+            Weapon bronzeAx = new Weapon(1000, 0, false, false, " 어디선가 사용됐던거 같은 도끼입니다. ", "청동 도끼", 5);
+            Weapon spearOfSparta = new Weapon(3500, 0, false, false, "스파르타의 전사들이 사용했다는 전설의 창입니다. ", "스파르타의 창", 7);
 
             equipments.Add(oldSword);
             equipments.Add(noviceArmor);
@@ -180,7 +170,28 @@ namespace TextGame
 
         static void GameDataSetting()
         {
-            player = new Character("Chad", "전사", 1, 10 + Checknum(0), 5 + Checknum(1), 100, 1500);
+            ReadData();
+            for(int i = 0; i < data[7].Length; i++)
+            {
+                if (data[7][i] == '0')
+                {
+                    equipments[i].Ishave = false;
+                }
+                else if (data[7][i] == '1')
+                {
+                    equipments[i].Ishave = true;
+                }
+
+                if (data[8][i] == '0')
+                {
+                    equipments[i].Isequip = false;
+                }
+                else if (data[8][i] == '1')
+                {
+                    equipments[i].Isequip = true;
+                }
+            }
+            player = new Character(data[0], data[1], int.Parse(data[2]), float.Parse(data[3]) + Checknum(0), int.Parse(data[4]) + Checknum(1), int.Parse(data[5]), int.Parse(data[6]));
         }
         static void EquipmentPlayerDataSetting(int num, int equippart, bool istake)
         {
@@ -219,16 +230,20 @@ namespace TextGame
             Console.WriteLine("1. 상태보기");
             Console.WriteLine("2. 인벤토리");
             Console.WriteLine("3. 상점");
-            Console.WriteLine("4 : 던전입장");
-            Console.WriteLine("5 : 휴식하기");
+            Console.WriteLine("4. 던전입장");
+            Console.WriteLine("5. 휴식하기");
+            Console.WriteLine("0. 게임 끝내기");
 
             Console.WriteLine();
             Console.WriteLine("원하시는 행동을 입력해주세요.");
             Console.Write(">> ");
 
-            int input = CheckValidInput(1, 5);
+            int input = CheckValidInput(0, 5);
             switch (input)
             {
+                case 0:
+                    SaveData();
+                    break;
                 case 1:
                     DisplayMyInfo();
                     break;
@@ -343,16 +358,16 @@ namespace TextGame
             Console.WriteLine("[보유 골드]");
             Console.WriteLine($"{player.Gold} G");
             Console.WriteLine();
-            int num = 1;
+            int num = 0;
             Dictionary<int,int> dic = new Dictionary<int,int>();
             for (int i = 0; i < equipments.Count; i++)
             {
                 if (equipments[i].Ishave)
                 {
+                    num++;
                     Console.Write($"- {num}. ");
                     equipments[i].DisplayEquipment(true, true);
                     dic.Add(num,i);
-                    num++;
                 }
             }
             Console.WriteLine();
@@ -551,15 +566,15 @@ namespace TextGame
             Console.WriteLine();
             Console.WriteLine("[아이템 목록]");
             Dictionary<int, int> dic = new Dictionary<int, int>();
-            int num = 1;
+            int num = 0;
             for (int i = 0; i < equipments.Count; i++)
             {
                 if (equipments[i].Ishave)
                 {
+                    num++;
                     Console.Write($"- {num}. ");
                     equipments[i].DisplayEquipment(false, false);
                     dic.Add(num, i);
-                    num++;
                 }
             }
             Console.WriteLine();
@@ -621,6 +636,7 @@ namespace TextGame
             Console.WriteLine("1. 쉬운 던전        | 방어력 5 이상 권장");
             Console.WriteLine("2. 일반 던전        | 방어력 11 이상 권장");
             Console.WriteLine("3. 어려운 던전      | 방어력 17 이상 권장");
+            Console.WriteLine("0. 나가기");
             Console.WriteLine();
             Console.WriteLine("원하시는 행동을 입력해주세요.");
             Console.Write(">> ");
@@ -772,6 +788,77 @@ namespace TextGame
             }
         }
 
+
+        //---------------------------------------파일 입출력-----------------------------------------------
+        static void ReadData()
+        {
+            if (!File.Exists("data.txt"))
+            {
+                FileStream fs = File.Create("data.txt");
+                
+                //초기 설정
+                StreamWriter sw = new StreamWriter(fs);
+                sw.WriteLine("Chad");
+                sw.WriteLine("전사");
+                sw.WriteLine("1");
+                sw.WriteLine("10");
+                sw.WriteLine("5");
+                sw.WriteLine("100");
+                sw.WriteLine("1500");
+                sw.WriteLine("000000");
+                sw.WriteLine("000000");
+                sw.Close();
+                fs.Close();
+            }
+
+            StreamReader sr = new StreamReader("data.txt");
+            while (sr.Peek() >= 0)
+            {
+                data.Add(sr.ReadLine());
+            }
+
+            sr.Close();
+        }
+
+        //파일 저장
+        static void SaveData()
+        {
+            FileStream fs = File.Create("data.txt");
+            StreamReader sr = new StreamReader(fs);
+            if (sr.Peek() == -1)
+            {
+                //초기 설정
+                StreamWriter sw = new StreamWriter(fs);
+                sw.WriteLine(player.Name);
+                sw.WriteLine(player.Job);
+                sw.WriteLine(player.Level);
+                sw.WriteLine(player.Atk);
+                sw.WriteLine(player.Def);
+                sw.WriteLine(player.Hp);
+                sw.WriteLine(player.Gold);
+                string have = "";
+                for (int i = 0; i < equipments.Count; i++)
+                {
+                    if (equipments[i].Ishave == true)
+                        have += "1";
+                    else
+                        have += "0";
+                }
+                sw.WriteLine(have);
+
+                string equip = "";
+                for (int i = 0; i < equipments.Count; i++)
+                {
+                    if (equipments[i].Isequip == true)
+                        equip += "1";
+                    else
+                        equip += "0";
+                }
+                sw.WriteLine(equip);
+                sw.Close();
+                fs.Close();
+            }
+        }
 
     }
 
